@@ -1,3 +1,12 @@
+# https://github.com/ZivLow/esp3201-anpr
+# Script for performing automatic number plate recognition 
+# and identifying number plates of speeding vehicles
+# ESP3201 (Machine Learning in Robotics and Engineering) Project
+# 1) Ronald Wee
+# 2) Ziv Low
+# 
+# Tested and run on Ubuntu 22.04 LTS
+
 import math
 import os
 from pathlib import Path
@@ -484,7 +493,7 @@ def get_vehicle_speed(_image, _attributes, _frameCounter, boundary=(100, 400, 90
 # Function to estimate speed using ppm
 def estimateSpeed(location1, location2, frame_rate):
     d_pixels = math.sqrt(math.pow(location2[0] - location1[0], 2) + math.pow(location2[1] - location1[1], 2))
-    # ppm = location2[2] / carWidht
+    # ppm = location2[2] / carWidth
     ppm = 120.0
     d_meters = d_pixels / ppm
     #print("d_pixels=" + str(d_pixels), "d_meters=" + str(d_meters))
