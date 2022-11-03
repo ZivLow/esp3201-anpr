@@ -118,7 +118,7 @@ def init_alpr_sdk():
 
     # Defines the default JSON configuration. More information at https://www.doubango.org/SDKs/anpr/docs/Configuration_options.html
     JSON_CONFIG = {
-        "debug_level": "info",
+        "debug_level": "warn",
         "debug_write_input_image_enabled": False,
         "debug_internal_data_path": ".",
         
@@ -240,7 +240,7 @@ def tesseract_text_extraction(input_image, plate_box):
     # If filtered ocr results is not empty
     if ocr_confidences:
         # Compute average ocr_confidence amongst the valid results
-        ocr_confidence = sum(ocr_confidences)/len(ocr_confidences)
+        ocr_confidence = round(sum(ocr_confidences) / len(ocr_confidences), 1)
 
         # Extracted text
         predicted_result = pytesseract.image_to_string(roi, lang='eng', config=pytesseract_config)
