@@ -27,6 +27,9 @@ python3 anpr.py \
 
                 echo "Completed $VEHICLE_DETECT_METHOD $PLATE_DETECT_METHOD $OCR_DETECT_METHOD detection methods for $VIDEO_FILE_NAME"
                 
+                # Pause to allow ALPR_SDK to deInit
+                sleep 3
+                
                 done
             done
         done

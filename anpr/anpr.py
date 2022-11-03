@@ -149,41 +149,41 @@ def init_alpr_sdk():
             'L': ultimateAlprSdk.ULTALPR_SDK_IMAGE_TYPE_Y
     }
 
-    parser = argparse.ArgumentParser(description="""
-    This is the alpr-sdk using python language
-    """)
+    # parser = argparse.ArgumentParser(description="""
+    # This is the alpr-sdk using python language
+    # """)
 
-    parser.add_argument("--image", required=False, default=video_file_path, help="Path to the image with ALPR data to recognize")
-    parser.add_argument("--assets", required=False, default=alpr_sdk_asset_path, help="Path to the assets folder")
-    parser.add_argument("--charset", required=False, default="latin", help="Defines the recognition charset (a.k.a alphabet) value (latin, korean, chinese...)")
-    parser.add_argument("--car_noplate_detect_enabled", required=False, default=True, help="Whether to detect and return cars with no plate")
-    parser.add_argument("--ienv_enabled", required=False, default=False, help="Whether to enable Image Enhancement for Night-Vision (IENV). More info about IENV at https://www.doubango.org/SDKs/anpr/docs/Features.html#image-enhancement-for-night-vision-ienv. Default: true for x86-64 and false for ARM.")
-    parser.add_argument("--openvino_enabled", required=False, default=True, help="Whether to enable OpenVINO. Tensorflow will be used when OpenVINO is disabled")
-    parser.add_argument("--openvino_device", required=False, default="CPU", help="Defines the OpenVINO device to use (CPU, GPU, FPGA...). More info at https://www.doubango.org/SDKs/anpr/docs/Configuration_options.html#openvino-device")
-    parser.add_argument("--npu_enabled", required=False, default=True, help="Whether to enable NPU (Neural Processing Unit) acceleration")
-    parser.add_argument("--klass_lpci_enabled", required=False, default=False, help="Whether to enable License Plate Country Identification (LPCI). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#license-plate-country-identification-lpci")
-    parser.add_argument("--klass_vcr_enabled", required=False, default=False, help="Whether to enable Vehicle Color Recognition (VCR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-color-recognition-vcr")
-    parser.add_argument("--klass_vmmr_enabled", required=False, default=False, help="Whether to enable Vehicle Make Model Recognition (VMMR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-make-model-recognition-vmmr")
-    parser.add_argument("--klass_vbsr_enabled", required=False, default=False, help="Whether to enable Vehicle Body Style Recognition (VBSR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-body-style-recognition-vbsr")
-    parser.add_argument("--tokenfile", required=False, default="", help="Path to license token file")
-    parser.add_argument("--tokendata", required=False, default="", help="Base64 license token data")
+    # parser.add_argument("--image", required=False, default=video_file_path, help="Path to the image with ALPR data to recognize")
+    # parser.add_argument("--assets", required=False, default=alpr_sdk_asset_path, help="Path to the assets folder")
+    # parser.add_argument("--charset", required=False, default="latin", help="Defines the recognition charset (a.k.a alphabet) value (latin, korean, chinese...)")
+    # parser.add_argument("--car_noplate_detect_enabled", required=False, default=True, help="Whether to detect and return cars with no plate")
+    # parser.add_argument("--ienv_enabled", required=False, default=False, help="Whether to enable Image Enhancement for Night-Vision (IENV). More info about IENV at https://www.doubango.org/SDKs/anpr/docs/Features.html#image-enhancement-for-night-vision-ienv. Default: true for x86-64 and false for ARM.")
+    # parser.add_argument("--openvino_enabled", required=False, default=True, help="Whether to enable OpenVINO. Tensorflow will be used when OpenVINO is disabled")
+    # parser.add_argument("--openvino_device", required=False, default="CPU", help="Defines the OpenVINO device to use (CPU, GPU, FPGA...). More info at https://www.doubango.org/SDKs/anpr/docs/Configuration_options.html#openvino-device")
+    # parser.add_argument("--npu_enabled", required=False, default=True, help="Whether to enable NPU (Neural Processing Unit) acceleration")
+    # parser.add_argument("--klass_lpci_enabled", required=False, default=False, help="Whether to enable License Plate Country Identification (LPCI). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#license-plate-country-identification-lpci")
+    # parser.add_argument("--klass_vcr_enabled", required=False, default=False, help="Whether to enable Vehicle Color Recognition (VCR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-color-recognition-vcr")
+    # parser.add_argument("--klass_vmmr_enabled", required=False, default=False, help="Whether to enable Vehicle Make Model Recognition (VMMR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-make-model-recognition-vmmr")
+    # parser.add_argument("--klass_vbsr_enabled", required=False, default=False, help="Whether to enable Vehicle Body Style Recognition (VBSR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-body-style-recognition-vbsr")
+    # parser.add_argument("--tokenfile", required=False, default="", help="Path to license token file")
+    # parser.add_argument("--tokendata", required=False, default="", help="Base64 license token data")
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
     # Update JSON options using values from the command args
-    JSON_CONFIG["assets_folder"] = args.assets
-    JSON_CONFIG["charset"] = args.charset
-    JSON_CONFIG["car_noplate_detect_enabled"] = (args.car_noplate_detect_enabled == "True")
-    JSON_CONFIG["ienv_enabled"] = (args.ienv_enabled == "True")
-    JSON_CONFIG["openvino_enabled"] = (args.openvino_enabled == "True")
-    JSON_CONFIG["openvino_device"] = args.openvino_device
-    JSON_CONFIG["npu_enabled"] = (args.npu_enabled == "True")
-    JSON_CONFIG["klass_lpci_enabled"] = (args.klass_lpci_enabled == "True")
-    JSON_CONFIG["klass_vcr_enabled"] = (args.klass_vcr_enabled == "True")
-    JSON_CONFIG["klass_vmmr_enabled"] = (args.klass_vmmr_enabled == "True")
-    JSON_CONFIG["klass_vbsr_enabled"] = (args.klass_vbsr_enabled == "True")
-    JSON_CONFIG["license_token_file"] = args.tokenfile
-    JSON_CONFIG["license_token_data"] = args.tokendata
+    JSON_CONFIG["assets_folder"] = alpr_sdk_asset_path
+    JSON_CONFIG["charset"] = "latin"
+    JSON_CONFIG["car_noplate_detect_enabled"] = True
+    JSON_CONFIG["ienv_enabled"] = False
+    JSON_CONFIG["openvino_enabled"] = False
+    JSON_CONFIG["openvino_device"] = "CPU"
+    JSON_CONFIG["npu_enabled"] = True
+    JSON_CONFIG["klass_lpci_enabled"] = False
+    JSON_CONFIG["klass_vcr_enabled"] = False
+    JSON_CONFIG["klass_vmmr_enabled"] = False
+    JSON_CONFIG["klass_vbsr_enabled"] = False
+    JSON_CONFIG["license_token_file"] = ""
+    JSON_CONFIG["license_token_data"] = ""
 
     # Initialize the ALPR SDK engine
     checkResult("Init", ultimateAlprSdk.UltAlprSdkEngine_init(json.dumps(JSON_CONFIG)))
@@ -281,21 +281,20 @@ def alpr_sdk_text_extraction(input_image, plate_box):
     # Number of plates detected
     num_plates_detected = alpr_output_result.numPlates()
 
+    plate_number = None
+    ocr_confidence = None
+
     # If plates are detected
     if num_plates_detected > 0:
 
         current_plate = alpr_output['plates'][0]
 
         # Slice into plate_number
-        plate_number = current_plate['text']
+        plate_number = current_plate.get('text', None)
 
         # Slice into ocr_confidence
-        ocr_confidence = round(current_plate['confidences'][0], 1)
-
-    # If no plate detected
-    else:
-        plate_number = None
-        ocr_confidence = None
+        if current_plate.get('confidences', None) is not None:
+            ocr_confidence = round(current_plate['confidences'][0], 1)
 
     return plate_number, ocr_confidence
 
@@ -853,7 +852,7 @@ def get_input_args():
     anpr_parser.add_argument("--plate_confidence_threshold", required=False, default=15.0, help="[0.0 ~ 100.0]. Only accept detected plates with confidence higher than this")
     
     # Opencv control
-    anpr_parser.add_argument("--plate_window_size", required=False, default=600, help="Plate window size for opencv in pixels. Square shaped.")
+    anpr_parser.add_argument("--plate_window_size", required=False, default=500, help="Plate window size for opencv in pixels. Square shaped.")
     
     # Debug output control
     anpr_parser.add_argument("--tracker_debug", required=False, default=False, help="Debug option to print trackers to terminal")
@@ -897,7 +896,7 @@ if __name__ == "__main__":
     output_video_resolution = (1920, 1080)                      # (width, height). Output video resolution
 
     # Path to save csv file
-    OUTPUT_CSV = anpr_args.output_csv                                           # [True, False]. Whether to output csv file.
+    OUTPUT_CSV = (anpr_args.output_csv == "True")                                           # [True, False]. Whether to output csv file.
     csv_output_path = "".join([output_video_directory, video_file_name, output_video_append, '.csv'])
 
     # ALPR-SDK parameters
@@ -924,9 +923,9 @@ if __name__ == "__main__":
     PLATE_CONFIDENCE_THRESHOLD = float(anpr_args.plate_confidence_threshold)                           # [0.0 ~ 100.0]. Only accept detected plates with confidence higher than this
 
 
-    #############
-    # VARIABLES #
-    #############
+    ##################
+    # OPENCV CONTROL #
+    ##################
     titlePosition = (20, 20)                                    # Top left (x, y) of title position
     titleColour = (0, 84, 255)                                  # Title text colour
     vehicleBoxColour = (0, 255, 0)                              # Colour for vehicles
@@ -934,6 +933,9 @@ if __name__ == "__main__":
     speedComputeBoxColour = (17, 163, 252)                      # Colour for speed capture box
     plateWindowSize = int(anpr_args.plate_window_size)                                       # Plate window size for opencv in pixels. Square shaped.
 
+    ########################
+    # INITIALIZE VARIABLES #
+    ########################
     frameCounter = 0
     currentCarID = 0
     currentPlateID = 0
@@ -941,18 +943,19 @@ if __name__ == "__main__":
     vehicleAttributes = {}
     plateAttributes = {}
     vehicleWithPlateAttributes = []                             # List storing the paired vehicles and plates
+    vehicleWithPlate_filtered_df = pd.DataFrame()               # The pandas dataframe to eventually export as csv file
 
 
     #################
     # DEBUG CONTROL #
     #################
-    TRACKER_DEBUG = anpr_args.tracker_debug
-    DEBUG_OUTPUT = anpr_args.output_debug
+    TRACKER_DEBUG = (anpr_args.tracker_debug == "True")
+    DEBUG_OUTPUT = (anpr_args.output_debug == "True")
 
 
-    ##############
-    # INITIALIZE #
-    ##############
+    ###########################
+    # INITIALIZE ANPR PROGRAM #
+    ###########################
 
     # Initialize ANPR
     init_anpr(PROCESSING_METHODS)
@@ -1081,13 +1084,10 @@ if __name__ == "__main__":
                         plate_number, ocr_confidence = perform_ocr(opencv_image, plate_box, ocr_method=OCR_METHOD)
                         #print(plate_number, ocr_confidence)
 
+                        # Expand the size of the plate image
                         plate_resized_image = resize2SquareKeepingAspectRation(opencv_image[plate_box[1]:plate_box[3], plate_box[0]:plate_box[2]], plateWindowSize, cv2.INTER_AREA)
 
-                        if plate_number:
-                            cv2.putText(plate_resized_image, plate_number, (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 3, plateBoxColour, 2)
-                            cv2.putText(plate_resized_image, "Confidence: " + str(ocr_confidence) + "%", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
 
-                        #cv2.imshow("Plate", plate_resized_image)
 
                         # Check if new bounding box is within what is already being tracked
                         matchPlateID = isNewBox(plate_box, plateAttributes, key='plate_tracker')
@@ -1110,6 +1110,12 @@ if __name__ == "__main__":
                                 'ocr_confidence': ocr_confidence
                             }
 
+                            if plate_number:
+                                
+                                # Write in the plate window
+                                cv2.putText(plate_resized_image, plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
+                                cv2.putText(plate_resized_image, "Confidence: " + str(ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
+
                             currentPlateID += 1
 
                         # If plate detected is already being tracked
@@ -1118,13 +1124,25 @@ if __name__ == "__main__":
                             plateAttributes[matchPlateID]['plate_confidence'] = plate_confidence
 
                             old_plate_number = plateAttributes[matchPlateID]['plate_number']
+                            old_ocr_confidence = plateAttributes[matchPlateID]['ocr_confidence']
 
                             # If confidence for plate number has increased
-                            if (old_plate_number is None) or (plate_confidence > plateAttributes[matchPlateID]['ocr_confidence']):
+                            if plate_number and ((old_ocr_confidence is None) or (ocr_confidence > old_ocr_confidence)):
 
                                 # Update attributes
                                 plateAttributes[matchPlateID]['plate_number'] = plate_number
                                 plateAttributes[matchPlateID]['ocr_confidence'] = ocr_confidence
+
+                                # Write in the plate window
+                                cv2.putText(plate_resized_image, plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
+                                cv2.putText(plate_resized_image, "Confidence: " + str(ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
+
+                            # If confidence for plate number has not increased
+                            elif old_plate_number:
+
+                                # Write in the plate window
+                                cv2.putText(plate_resized_image, old_plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
+                                cv2.putText(plate_resized_image, "Confidence: " + str(old_ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
 
         # Track all vehicles
         resultImage, vehicleAttributes = trackAllVehicles(resultImage, vehicleAttributes, colour=vehicleBoxColour)
@@ -1135,6 +1153,10 @@ if __name__ == "__main__":
         # Compute speed for each tracked vehicle
         resultImage, vehicleAttributes = get_vehicle_speed(resultImage, vehicleAttributes, frameCounter, boundary=speedComputeBoundary)
 
+        # Overlay resized plate window with resulting image
+        if plate_resized_image is not None:
+            resultImage[0:plateWindowSize, 0:plateWindowSize] = plate_resized_image
+
         # Draw dotted bounding box for where speed is measuring
         drawrect(resultImage, (speedComputeBoundary[0], speedComputeBoundary[1]), (speedComputeBoundary[2], speedComputeBoundary[3]), speedComputeBoxColour, thickness=3, style='dotted')
         cv2.putText(resultImage, "Speed Capture Area", (speedComputeBoundary[0], speedComputeBoundary[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, speedComputeBoxColour, 2)
@@ -1144,9 +1166,7 @@ if __name__ == "__main__":
         cv2.putText(resultImage, "  Plate Detector: " + PLATE_DETECT_METHOD, (titlePosition[0], titlePosition[1] + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
         cv2.putText(resultImage, "   OCR Detector: " + OCR_METHOD, (titlePosition[0], titlePosition[1] + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
 
-        # Overlay resized plate window with resulting image
-        if plate_resized_image is not None:
-            resultImage[0:plateWindowSize, 0:plateWindowSize] = plate_resized_image
+
 
         ##################
         # DATA FILTERING #
@@ -1201,11 +1221,12 @@ if __name__ == "__main__":
             break
 
     # Sort rows by highest speed to lowest speed
-    vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df.sort_values(by='speed', axis=0, ascending=False, ignore_index=True)
+    if 'speed' in vehicleWithPlate_filtered_df.columns:
+        vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df.sort_values(by='speed', axis=0, ascending=False, ignore_index=True)
     
-    # Write to csv file
-    if OUTPUT_CSV and len(vehicleWithPlate_filtered_df): 
-        vehicleWithPlate_filtered_df.to_csv(csv_output_path, sep=',', index=False, header=True, encoding='utf-8')
+        # Write to csv file
+        if OUTPUT_CSV and len(vehicleWithPlate_filtered_df): 
+            vehicleWithPlate_filtered_df.to_csv(csv_output_path, sep=',', index=False, header=True, encoding='utf-8')
     
 
 
