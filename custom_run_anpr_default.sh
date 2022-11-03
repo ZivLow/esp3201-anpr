@@ -20,7 +20,7 @@ python3 anpr.py \
 --plate_track_threshold 6 \
 --vehicle_confidence_threshold 20.0 \
 --plate_confidence_threshold 15.0 \
---plate_window_size 600 \
+--plate_window_size 500 \
 --tracker_debug False \
 --output_debug True
 
