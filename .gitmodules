@@ -1,0 +1,6 @@
+[submodule "yolov5"]
+	path = yolov5
+	url = https://github.com/ultralytics/yolov5.git
+[submodule "OIDv4_ToolKit"]
+	path = OIDv4_ToolKit
+	url = https://github.com/EscVM/OIDv4_ToolKit.git
