@@ -1,0 +1,13 @@
+OIDv4_Toolkit/*
+alpr_sdk/*
+anpr/__pycache__
+output_video/*
+traffic_footage/*
+yolov5/__pycache__
+yolov5/runs/*
+yolov5/data/vehicle_and_plate/train/images/*
+yolov5/data/vehicle_and_plate/train/labels/*
+yolov5/data/vehicle_and_plate/train/labels.cache
+yolov5/data/vehicle_and_plate/validation/images/*
+yolov5/data/vehicle_and_plate/validation/labels/*
+yolov5/data/vehicle_and_plate/validation/labels.cache
