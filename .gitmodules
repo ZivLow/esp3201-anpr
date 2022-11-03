@@ -4,3 +4,6 @@
 [submodule "OIDv4_ToolKit"]
 	path = OIDv4_ToolKit
 	url = https://github.com/EscVM/OIDv4_ToolKit.git
+[submodule "ultimateALPR-SDK"]
+	path = ultimateALPR-SDK
+	url = https://github.com/DoubangoTelecom/ultimateALPR-SDK.git
