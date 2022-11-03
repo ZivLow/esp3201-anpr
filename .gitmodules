@@ -1,9 +1,9 @@
-[submodule "yolov5"]
-	path = yolov5
-	url = https://github.com/ultralytics/yolov5.git
-[submodule "ultimateALPR-SDK"]
-	path = ultimateALPR-SDK
-	url = https://github.com/DoubangoTelecom/ultimateALPR-SDK.git
 [submodule "OIDv4_ToolKit"]
 	path = OIDv4_ToolKit
 	url = https://github.com/ZivLow/OIDv4_ToolKit
+[submodule "yolov5"]
+	path = yolov5
+	url = https://github.com/ZivLow/yolov5
+[submodule "ultimateALPR-SDK"]
+	path = ultimateALPR-SDK
+	url = https://github.com/ZivLow/ultimateALPR-SDK
