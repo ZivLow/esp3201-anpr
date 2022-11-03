@@ -233,7 +233,6 @@ def tesseract_text_extraction(input_image, plate_box):
 
     # Multiple ocr confidences
     ocr_confidences = pytesseract.image_to_data(roi, config=pytesseract_config, output_type=pytesseract.Output.DICT)['conf']
-    print(f"ocr_confidences: {ocr_confidences}")
 
     # Get valid ocr_confidences. Filter out nonsense ocr results.
     ocr_confidences = [x for x in ocr_confidences if x != -1]
@@ -245,9 +244,6 @@ def tesseract_text_extraction(input_image, plate_box):
 
         # Extracted text
         predicted_result = pytesseract.image_to_string(roi, lang='eng', config=pytesseract_config)
-
-        print(f"predicted_result: {predicted_result}")
-        print(f"ocr_confidence: {ocr_confidence}")
 
         # Join the text
         plate_number = "".join(predicted_result.split()).replace(":", "").replace("-", "")
@@ -921,7 +917,8 @@ if __name__ == "__main__":
     PLATE_TRACK_THRESHOLD = int(anpr_args.plate_track_threshold)                                   # [1 ~ 9]. Reject tracked plates with tracking quality less than this. 
     VEHICLE_CONFIDENCE_THRESHOLD = float(anpr_args.vehicle_confidence_threshold)                         # [0.0 ~ 100.0]. Only accept detected vehicles with confidence higher than this
     PLATE_CONFIDENCE_THRESHOLD = float(anpr_args.plate_confidence_threshold)                           # [0.0 ~ 100.0]. Only accept detected plates with confidence higher than this
-
+    pd.set_option("display.max_columns", 15)
+    pd.set_option('display.expand_frame_repr', False)
 
     ##################
     # OPENCV CONTROL #
@@ -1202,8 +1199,8 @@ if __name__ == "__main__":
             vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df[column_order]
 
         if DEBUG_OUTPUT and (not (frameCounter % 120)) and len(vehicleWithPlate_filtered_df):
-            print("")
-            print("vehicleWithPlate_filtered_df")
+            print("\n\n\n")
+            print("Vehicles and plates data after " + str(frameCounter) + " frames: ")
             print(vehicleWithPlate_filtered_df)
 
             # Write to csv file. No compression to save faster.
@@ -1223,6 +1220,11 @@ if __name__ == "__main__":
     # Sort rows by highest speed to lowest speed
     if 'speed' in vehicleWithPlate_filtered_df.columns:
         vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df.sort_values(by='speed', axis=0, ascending=False, ignore_index=True)
+
+        # Print final output to terminal
+        print("\n\n\n")
+        print("Vehicles and plates data after " + str(frameCounter) + " frames: ")
+        print(vehicleWithPlate_filtered_df)
     
         # Write to csv file
         if OUTPUT_CSV and len(vehicleWithPlate_filtered_df): 

@@ -3,9 +3,9 @@ cd ./anpr
 LD_LIBRARY_PATH=../alpr_sdk:$LD_LIBRARY_PATH \
 python3 anpr.py \
 --vehicle_detect_method 'YOLOv5' \
---plate_detect_method 'ALPR_SDK' \
+--plate_detect_method 'YOLOv5' \
 --ocr_detect_method 'PyTesseract' \
---video_filename 'traffic_departing_1' \
+--video_filename 'traffic_oncoming_2' \
 --video_file_extension '.mov' \
 --video_file_directory '/home/ziv/speeding_catcher/traffic_footage/' \
 --video_fps 30 \
