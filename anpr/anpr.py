@@ -940,9 +940,9 @@ def get_input_args():
 
     # Thresholds
     anpr_parser.add_argument("--speed_limit", required=False, default="2", help="+ve float or int. Speed limit of the road in km/hr to track. Minimum speed to consider for matching with plates into csv file")
-    anpr_parser.add_argument("--ppm", required=False, default="300.0", help="+ve float or int. Pixels per meter in the speed capture box")
+    anpr_parser.add_argument("--ppm", required=False, default="25.0", help="+ve float or int. Pixels per meter in the speed capture box")
     anpr_parser.add_argument("--vehicle_track_threshold", required=False, default="8", help="[1 ~ 9]. Reject tracked vehicles with tracking quality less than this")
-    anpr_parser.add_argument("--plate_track_threshold", required=False, default="6", help="[1 ~ 9]. [1 ~ 9]. Reject tracked plates with tracking quality less than this")
+    anpr_parser.add_argument("--plate_track_threshold", required=False, default="5", help="[1 ~ 9]. [1 ~ 9]. Reject tracked plates with tracking quality less than this")
     anpr_parser.add_argument("--vehicle_confidence_threshold", required=False, default="20.0", help="[0.0 ~ 100.0]. Only accept detected vehicles with confidence higher than this")
     anpr_parser.add_argument("--plate_confidence_threshold", required=False, default="15.0", help="[0.0 ~ 100.0]. Only accept detected plates with confidence higher than this")
     
