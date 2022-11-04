@@ -438,11 +438,22 @@ def trackAllVehicles(_image, _attributes, colour=(0, 255, 0)):
         cv2.rectangle(_image, (t_x, t_y), (t_x + t_w, t_y + t_h), colour, 2)
 
         # Write the confidence for the vehicle
-        vehicle_confidence_string = str(round(_attributes[vehicleID]['vehicle_confidence'], 1))
-        cv2.putText(_image, " Vehicle (" + vehicle_confidence_string + "%)", (t_x, t_y - 30),cv2.FONT_HERSHEY_SIMPLEX, 0.6, colour, 1)
+        vehicle_confidence = _attributes[vehicleID].get('vehicle_confidence', None)
 
-        # For speed estimation
-        _attributes[vehicleID]['location2'] = (t_x, t_y, t_w, t_h)
+        if vehicle_confidence is None:
+            cv2.putText(_image, " Vehicle", (t_x, t_y - 30),cv2.FONT_HERSHEY_SIMPLEX, 0.6, colour, 1)
+        else:
+            vehicle_confidence_string = str(round(vehicle_confidence, 1))
+            cv2.putText(_image, " Vehicle (" + vehicle_confidence_string + "%)", (t_x, t_y - 30),cv2.FONT_HERSHEY_SIMPLEX, 0.6, colour, 1)
+
+        if (_attributes[vehicleID].get('speed_captured', False) == True):
+            cv2.putText(_image, str(_attributes[vehicleID].get('speed')) + " km/hr", (t_x, t_y - 5),cv2.FONT_HERSHEY_SIMPLEX, 0.75, colour, 1)
+
+        # If specified number of frames has passed
+        if frameCounter % TRACKER_FRAME_CHECK_INTERVAL == 0:
+
+            # For speed estimation
+            _attributes[vehicleID]['location2'] = (t_x, t_y, t_w, t_h)
 
     return _image, _attributes
 
@@ -479,34 +490,35 @@ def get_vehicle_speed(_image, _attributes, _frameCounter, boundary=(100, 400, 90
     # Compute speed
     for vehicleID in _attributes.keys():
 
-        # Get previous speed
-        old_speed = _attributes[vehicleID].get('speed', None)
-
-        # Old vehicle location
-        x1, y1, w1, h1 = _attributes[vehicleID]['location1']
-        old_center = get_center_position((x1, y1, x1 + w1, y1 + h1))
-
-        # New vehicle location computed by tracker
-        x2, y2, w2, h2 = _attributes[vehicleID]['location2']
-        new_center = get_center_position((x2, y2, x2 + w2, y2 + h2))
-
-        # Get threshold boundary
-        thres_x_min, thres_y_min, thres_x_max, thres_y_max = boundary
-
         # Check speed after specified number of frames has passed
         if _frameCounter % TRACKER_FRAME_CHECK_INTERVAL == 0:
 
+            # Old vehicle location
+            x1, y1, w1, h1 = _attributes[vehicleID]['location1']
+
+            # New vehicle location computed by tracker
+            x2, y2, w2, h2 = _attributes[vehicleID]['location2']
+            
             # Update old vehicle location with new tracked location
             _attributes[vehicleID]['location1'] = (x2, y2, w2, h2)
 
             # If the vehicle has moved
             if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
 
+                # Get threshold boundary
+                thres_x_min, thres_y_min, thres_x_max, thres_y_max = boundary
+
+                old_center = get_center_position((x1, y1, x1 + w1, y1 + h1))
+                new_center = get_center_position((x2, y2, x2 + w2, y2 + h2))
+
+                # Get previous speed
+                old_speed = _attributes[vehicleID].get('speed', None)
+
                 # Compute speed
                 estimated_speed = estimateSpeed(old_center, new_center, input_video_fps)
 
                 # If within speed capture box
-                if (old_speed == None or old_speed == 0) and (thres_x_min <= new_center[0] <= thres_x_max) and (thres_y_min <= new_center[1] <= thres_y_max):
+                if (old_speed == None or estimated_speed > old_speed) and (thres_x_min <= new_center[0] <= thres_x_max) and (thres_y_min <= new_center[1] <= thres_y_max):
                     _attributes[vehicleID]['speed'] = estimated_speed
                     _attributes[vehicleID]['speed_captured'] = True
                 
@@ -516,22 +528,18 @@ def get_vehicle_speed(_image, _attributes, _frameCounter, boundary=(100, 400, 90
                         _attributes[vehicleID]['slow_vehicle_counter'] = 0
                     _attributes[vehicleID]['slow_vehicle_counter'] += 1
 
-        # Write the speed to image
-        #if (_attributes[vehicleID].get('speed_captured', False)== True) and (thres_x_min <= new_center[0] <= thres_x_max) and (thres_y_min <= new_center[1] <= thres_y_max):
-        if (_attributes[vehicleID].get('speed_captured', False)== True):
-            cv2.putText(_image, str(round(_attributes[vehicleID].get('speed'), 1)) + " km/hr", (int(x2), int(y2 - 5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, colour, 1)
 
     return _image, _attributes
 
 # Function to estimate speed using ppm
 def estimateSpeed(location1, location2, frame_rate):
     d_pixels = math.sqrt(math.pow(location2[0] - location1[0], 2) + math.pow(location2[1] - location1[1], 2))
-    # ppm = location2[2] / carWidth
-    ppm = 120.0
-    d_meters = d_pixels / ppm
+    # PPM = location2[2] / carWidth
+    d_meters = d_pixels / PPM
     #print("d_pixels=" + str(d_pixels), "d_meters=" + str(d_meters))
-    speed = d_meters * frame_rate * 3.6 / TRACKER_FRAME_CHECK_INTERVAL
-    return speed
+    #speed = d_meters * frame_rate * 3.6 / TRACKER_FRAME_CHECK_INTERVAL
+    speed = d_meters * frame_rate / TRACKER_FRAME_CHECK_INTERVAL
+    return round(speed, 1)
 
 # Calculates Intersection over Union (IoU) of bb1 and bb2
 # Taken from: https://stackoverflow.com/questions/25349178/calculating-percentage-of-bounding-box-overlap-for-image-detector-evaluation 
@@ -682,9 +690,15 @@ def match_plate_with_vehicle(_vehicleAttributes, _plateAttributes, threshold=0.8
 
 # Initialize ANPR
 def init_anpr(initialize_set):
+    if 'haar_cascade' in initialize_set: init_haar_cascade()
     if 'YOLOv5' in initialize_set: init_yolov5()
     if 'ALPR_SDK' in initialize_set: init_alpr_sdk()
     if 'EasyOCR' in initialize_set: init_easyocr()
+
+# Initialize haar_cascade using opencv
+def init_haar_cascade():
+    global haar_cascade_model
+    haar_cascade_model = cv2.CascadeClassifier(haar_cascade_weights_path)
 
 # Initialize YOLOv5 using pyTorch
 def init_yolov5():
@@ -701,6 +715,10 @@ def init_easyocr():
 def perform_inference(vehicle_detect_method='YOLOv5', plate_detect_method='YOLOv5'):
 
     inference_method = [vehicle_detect_method, plate_detect_method]
+
+    if 'haar_cascade' in inference_method:
+        haar_cascade_results, rejectLevels, levelWeights = haar_cascade_model.detectMultiScale3(opencv_image, scaleFactor=1.1, minNeighbors=32, minSize=(30, 30), outputRejectLevels = True)
+        haar_cascade_vehicles_df = get_haar_cascade_dataframe(haar_cascade_results)
 
     if 'YOLOv5' in inference_method:
         yolo_inference_results = yolov5_model(opencv_image)
@@ -746,20 +764,57 @@ def perform_inference(vehicle_detect_method='YOLOv5', plate_detect_method='YOLOv
         
     # Pattern matching with PEP 636: https://peps.python.org/pep-0636/#or-patterns
     match inference_method:
+        case ['haar_cascade', 'YOLOV5']:
+            return haar_cascade_vehicles_df, yolo_plates_df
+
+        case ['haar_cascade', 'ALPR_SDK']:
+            return haar_cascade_vehicles_df, alpr_sdk_plates_df
+
         case ['YOLOv5', 'YOLOv5']:
             return yolo_vehicles_df, yolo_plates_df
-        
-        case ['ALPR_SDK', 'ALPR_SDK']:
-            return alpr_sdk_vehicles_df, alpr_sdk_plates_df
 
         case ['YOLOv5', 'ALPR_SDK']:
             return yolo_vehicles_df, alpr_sdk_plates_df
 
         case ['ALPR_SDK', 'YOLOv5']:
             return alpr_sdk_vehicles_df, yolo_plates_df
+        
+        case ['ALPR_SDK', 'ALPR_SDK']:
+            return alpr_sdk_vehicles_df, alpr_sdk_plates_df
 
         case _:
             raise ValueError("Invalid 'vehicle_detect_method' or 'plate_detect_method' argument.")
+
+# Convert the haar_cascade_results into usable pandas dataframe
+def get_haar_cascade_dataframe(haar_cascade_results):
+
+    haar_cascade_detection_results = []
+
+    # If no detections
+    if np.array_equal(haar_cascade_results, ()):
+        return pd.DataFrame()
+
+    # Loop through each vehicle boundaries
+    for x, y, w, h in haar_cascade_results:
+        vehicle_x_min = x
+        vehicle_y_min = y
+        vehicle_x_max = x + w
+        vehicle_y_max = y + h
+
+        new_vehicle = {
+            'name': 'Land vehicle',
+            'xmin': vehicle_x_min,
+            'ymin': vehicle_y_min,
+            'xmax': vehicle_x_max,
+            'ymax': vehicle_y_max,
+            'confidence': None
+        }
+
+        haar_cascade_detection_results.append(new_vehicle)
+
+    haar_cascade_detection_results_df = pd.DataFrame.from_records(haar_cascade_detection_results)
+
+    return haar_cascade_detection_results_df
 
 
 # Convert and filter alpr_sdk json results into usable pandas dataframe
@@ -885,6 +940,7 @@ def get_input_args():
 
     # Thresholds
     anpr_parser.add_argument("--speed_limit", required=False, default="2", help="+ve float or int. Speed limit of the road in km/hr to track. Minimum speed to consider for matching with plates into csv file")
+    anpr_parser.add_argument("--ppm", required=False, default="300.0", help="+ve float or int. Pixels per meter in the speed capture box")
     anpr_parser.add_argument("--vehicle_track_threshold", required=False, default="8", help="[1 ~ 9]. Reject tracked vehicles with tracking quality less than this")
     anpr_parser.add_argument("--plate_track_threshold", required=False, default="6", help="[1 ~ 9]. [1 ~ 9]. Reject tracked plates with tracking quality less than this")
     anpr_parser.add_argument("--vehicle_confidence_threshold", required=False, default="20.0", help="[0.0 ~ 100.0]. Only accept detected vehicles with confidence higher than this")
@@ -944,6 +1000,7 @@ if __name__ == "__main__":
     # Model paths
     yolov5_dir = '../yolov5'
     yolov5_weights_path = '../yolov5/vehicle_epoch_120/yolov5_vehicle_and_plate/weights/best.pt'
+    haar_cascade_weights_path = 'myhaar.xml'
 
     # How often to perform inference
     INFERENCE_FRAME_CHECK_INTERVAL = int(anpr_args.inference_frame_check_interval)
@@ -952,9 +1009,10 @@ if __name__ == "__main__":
 
     # Thresholds
     SPEED_LIMIT = float(anpr_args.speed_limit)                                             # +ve float or int. Speed limit of the road in km/hr to track. Minimum speed for vehicle detector to detect.
-    SLOW_MOVING_SPEED_THRESHOLD = float(1)                                                 # +ve float or int. Lower bound speed limit to count as a slow moving object. For flushing away slow moving objects that we are not interested in.
+    PPM = float(anpr_args.ppm)                                                             # +ve float or int. Pixels per meter in the speed capture box.
+    SLOW_MOVING_SPEED_THRESHOLD = float(5)                                                 # +ve float or int. Lower bound speed limit to count as a slow moving object. For flushing away slow moving objects that we are not interested in.
     SLOW_MOVING_TIME_THRESHOLD = float(1)                                                  # +ve float or int. How many seconds to wait before removing a slow moving object from tracking. For flushing away slow moving objects that we are not interested in.
-    speedComputeBoundary = (600, 100, 1900, 800)                                    # Boundary (x_min, y_min, x_max, y_max) to perform speed calculations. Depends on input video resolution.
+    speedComputeBoundary = (500, 100, 1900, 800)                                    # Boundary (x_min, y_min, x_max, y_max) to perform speed calculations. Depends on input video resolution.
     DetectionBoundary = (200, 120, 1900, 920)
     VEHICLE_TRACK_THRESHOLD = int(anpr_args.vehicle_track_threshold)                                 # [1 ~ 9]. Reject tracked vehicles with tracking quality less than this.
     PLATE_TRACK_THRESHOLD = int(anpr_args.plate_track_threshold)                                   # [1 ~ 9]. Reject tracked plates with tracking quality less than this. 
@@ -1064,11 +1122,11 @@ if __name__ == "__main__":
                     for vehicle_idx in vehicles.index:
 
                         # Get vehicle_confidence
-                        vehicle_confidence = vehicles.loc[vehicle_idx]['confidence']
+                        vehicle_confidence = vehicles.loc[vehicle_idx].get('confidence')
                         #print(f"vehicle_confidence: {vehicle_confidence}")
 
                         # If detected vehicle has high enough confidence
-                        if vehicle_confidence > VEHICLE_CONFIDENCE_THRESHOLD:
+                        if (VEHICLE_DETECT_METHOD == 'haar_cascade') or (vehicle_confidence > VEHICLE_CONFIDENCE_THRESHOLD):
 
                             # Get vehicle_box
                             vehicle_box = vehicles.loc[vehicle_idx, ['xmin', 'ymin', 'xmax', 'ymax']]
