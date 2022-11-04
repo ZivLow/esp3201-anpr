@@ -20,11 +20,44 @@ import pytesseract
 import torch
 import argparse
 import json
+from time import process_time as get_time
 
 try:
     import ultimateAlprSdk
 except ModuleNotFoundError as err:
     print(err)
+
+# Context manager to time a block of code
+class time_this_code(object):
+
+    # Entering the context manager
+    def __enter__(self):
+        self.time = get_time()
+        return self
+    
+    # Exiting the context manager
+    def __exit__(self, type, value, traceback):
+        self.time = round((get_time() - self.time) * 1000)
+
+# Decorator get the process time of the function. The time is assigned to the global variable function_duration
+def time_this_function(f):
+    def timer(*args, **kwargs):
+        global function_duration
+
+        # Begin timing
+        start_time = get_time()
+        
+        # Run the function f
+        result = f(*args, **kwargs)
+
+        # End timing
+        end_time = get_time()
+
+        # Time duration
+        function_duration = round((end_time - start_time) * 1000)
+
+        return result
+    return timer
 
 # Utility function to draw dotted line for opencv
 def drawline(img,pt1,pt2,color,thickness=1.0,style='dotted',gap=20):
@@ -120,10 +153,15 @@ def get_center_position(_bounding_box):
 def init_alpr_sdk():
 
     global TAG
-    global JSON_CONFIG
     global IMAGE_TYPES_MAPPING
 
     TAG = "[PythonRecognizer] "
+
+    IMAGE_TYPES_MAPPING = { 
+            'RGB': ultimateAlprSdk.ULTALPR_SDK_IMAGE_TYPE_RGB24,
+            'RGBA': ultimateAlprSdk.ULTALPR_SDK_IMAGE_TYPE_RGBA32,
+            'L': ultimateAlprSdk.ULTALPR_SDK_IMAGE_TYPE_Y
+    }
 
     # Defines the default JSON configuration. More information at https://www.doubango.org/SDKs/anpr/docs/Configuration_options.html
     JSON_CONFIG = {
@@ -150,12 +188,6 @@ def init_alpr_sdk():
         "recogn_rectify_enabled": True,
         "recogn_minscore": 0.3,
         "recogn_score_type": "min"
-    }
-
-    IMAGE_TYPES_MAPPING = { 
-            'RGB': ultimateAlprSdk.ULTALPR_SDK_IMAGE_TYPE_RGB24,
-            'RGBA': ultimateAlprSdk.ULTALPR_SDK_IMAGE_TYPE_RGBA32,
-            'L': ultimateAlprSdk.ULTALPR_SDK_IMAGE_TYPE_Y
     }
 
     # parser = argparse.ArgumentParser(description="""
@@ -306,6 +338,7 @@ def alpr_sdk_text_extraction(input_image, plate_box):
 
 
 # Function to perform OCR.
+@time_this_function
 def perform_ocr(input_image, plate_box, ocr_method='EasyOCR'):
     match ocr_method:
         case 'EasyOCR':
@@ -664,6 +697,7 @@ def init_easyocr():
     easyocrReader = easyocr.Reader(['en'], gpu=False)
 
 # Perform inference
+@time_this_function
 def perform_inference(vehicle_detect_method='YOLOv5', plate_detect_method='YOLOv5'):
 
     inference_method = [vehicle_detect_method, plate_detect_method]
@@ -835,7 +869,7 @@ def get_input_args():
     anpr_parser.add_argument("--video_filename", required=False, default='traffic_departing_1', help="filename of input video")
     anpr_parser.add_argument("--video_file_extension", required=False, default='.mov', help="file extension type of input video")
     anpr_parser.add_argument("--video_file_directory", required=False, default='/home/ziv/speeding_catcher/traffic_footage/', help="Directory of input video")
-    anpr_parser.add_argument("--video_fps", required=False, default=30, help="video frame rate")
+    anpr_parser.add_argument("--video_fps", required=False, default="30", help="video frame rate")
 
     # Ouput video options
     anpr_parser.add_argument("--output_video", required=False, default=True, help="[True, False]. Whether to output video")
@@ -843,25 +877,25 @@ def get_input_args():
     anpr_parser.add_argument("--output_video_append", required=False, default='_output', help="String to append to output video filename")
 
     # Output csv file
-    anpr_parser.add_argument("--output_csv", required=False, default=True, help="[True, False]. Whether to output csv file")
+    anpr_parser.add_argument("--output_csv", required=False, default="True", help="[True, False]. Whether to output csv file")
 
     # Frame check interval
-    anpr_parser.add_argument("--inference_frame_check_interval", required=False, default=1, help="How often to perform inference")
-    anpr_parser.add_argument("--tracker_frame_check_interval", required=False, default=1, help="How often to update tracker. Interval of frames to skip, before performing dlib tracking calculations.")
+    anpr_parser.add_argument("--inference_frame_check_interval", required=False, default="1", help="How often to perform inference")
+    anpr_parser.add_argument("--tracker_frame_check_interval", required=False, default="1", help="How often to update tracker. Interval of frames to skip, before performing dlib tracking calculations.")
 
     # Thresholds
-    anpr_parser.add_argument("--speed_limit", required=False, default=2, help="+ve float or int. Speed limit of the road in km/hr to track. Minimum speed to consider for matching with plates into csv file")
-    anpr_parser.add_argument("--vehicle_track_threshold", required=False, default=8, help="[1 ~ 9]. Reject tracked vehicles with tracking quality less than this")
-    anpr_parser.add_argument("--plate_track_threshold", required=False, default=6, help="[1 ~ 9]. [1 ~ 9]. Reject tracked plates with tracking quality less than this")
-    anpr_parser.add_argument("--vehicle_confidence_threshold", required=False, default=20.0, help="[0.0 ~ 100.0]. Only accept detected vehicles with confidence higher than this")
-    anpr_parser.add_argument("--plate_confidence_threshold", required=False, default=15.0, help="[0.0 ~ 100.0]. Only accept detected plates with confidence higher than this")
+    anpr_parser.add_argument("--speed_limit", required=False, default="2", help="+ve float or int. Speed limit of the road in km/hr to track. Minimum speed to consider for matching with plates into csv file")
+    anpr_parser.add_argument("--vehicle_track_threshold", required=False, default="8", help="[1 ~ 9]. Reject tracked vehicles with tracking quality less than this")
+    anpr_parser.add_argument("--plate_track_threshold", required=False, default="6", help="[1 ~ 9]. [1 ~ 9]. Reject tracked plates with tracking quality less than this")
+    anpr_parser.add_argument("--vehicle_confidence_threshold", required=False, default="20.0", help="[0.0 ~ 100.0]. Only accept detected vehicles with confidence higher than this")
+    anpr_parser.add_argument("--plate_confidence_threshold", required=False, default="15.0", help="[0.0 ~ 100.0]. Only accept detected plates with confidence higher than this")
     
     # Opencv control
-    anpr_parser.add_argument("--plate_window_size", required=False, default=500, help="Plate window size for opencv in pixels. Square shaped.")
+    anpr_parser.add_argument("--plate_window_size", required=False, default="500", help="Plate window size for opencv in pixels. Square shaped.")
     
     # Debug output control
-    anpr_parser.add_argument("--tracker_debug", required=False, default=False, help="Debug option to print trackers to terminal")
-    anpr_parser.add_argument("--output_debug", required=False, default=True, help="Debug option to print csv output to terminal")
+    anpr_parser.add_argument("--tracker_debug", required=False, default="False", help="Debug option to print trackers to terminal")
+    anpr_parser.add_argument("--output_debug", required=False, default="True", help="Debug option to print csv output to terminal")
     
     anpr_args = anpr_parser.parse_args()
 
@@ -951,6 +985,9 @@ if __name__ == "__main__":
     vehicleWithPlateAttributes = []                             # List storing the paired vehicles and plates
     vehicleWithPlate_filtered_df = pd.DataFrame()               # The pandas dataframe to eventually export as csv file
 
+    inference_duration = None
+    ocr_duration = None
+
 
     #################
     # DEBUG CONTROL #
@@ -989,239 +1026,257 @@ if __name__ == "__main__":
 
     # Loop through each video frame
     while True:
+        
+        with time_this_code() as frame:
 
-        # Get a frame from video
-        video_ok, opencv_image = video.read()
+            # Get a frame from video
+            video_ok, opencv_image = video.read()
 
-        if type(opencv_image) == type(None):
-            break
+            if type(opencv_image) == type(None):
+                break
 
-        # Decode the image to get width and height
-        pil_image, imageType = load_pil_image_from_opencv_frame(opencv_image)
-        width, height = pil_image.size
+            # Decode the image to get width and height
+            pil_image, imageType = load_pil_image_from_opencv_frame(opencv_image)
+            width, height = pil_image.size
 
-        # Make copy of image to draw the results on
-        resultImage = opencv_image.copy()
+            # Make copy of image to draw the results on
+            resultImage = opencv_image.copy()
 
-        # Clear out trackers with poor tracking quality
-        vehicleAttributes = remove_poor_trackers(opencv_image, vehicleAttributes, key='vehicle_tracker', threshold=VEHICLE_TRACK_THRESHOLD)
-        plateAttributes = remove_poor_trackers(opencv_image, plateAttributes, key='plate_tracker', threshold=PLATE_TRACK_THRESHOLD)
+            # Clear out trackers with poor tracking quality
+            vehicleAttributes = remove_poor_trackers(opencv_image, vehicleAttributes, key='vehicle_tracker', threshold=VEHICLE_TRACK_THRESHOLD)
+            plateAttributes = remove_poor_trackers(opencv_image, plateAttributes, key='plate_tracker', threshold=PLATE_TRACK_THRESHOLD)
 
-        frameCounter = frameCounter + 1
+            frameCounter = frameCounter + 1
 
-        if not (frameCounter % INFERENCE_FRAME_CHECK_INTERVAL):
+            if not (frameCounter % INFERENCE_FRAME_CHECK_INTERVAL):
 
-            # Inference. Get results from model.
-            vehicles, plates = perform_inference(vehicle_detect_method=VEHICLE_DETECT_METHOD, plate_detect_method=PLATE_DETECT_METHOD)
+                # Inference. Get results from model.
+                vehicles, plates = perform_inference(vehicle_detect_method=VEHICLE_DETECT_METHOD, plate_detect_method=PLATE_DETECT_METHOD)
 
-            # If vehicles are found
-            if len(vehicles):
+                # Get the inference duration
+                if function_duration:
+                    inference_duration, function_duration = function_duration, None
 
-                # Loop through each found vehicles
-                for vehicle_idx in vehicles.index:
+                # If vehicles are found
+                if len(vehicles):
 
-                    # Get vehicle_confidence
-                    vehicle_confidence = vehicles.loc[vehicle_idx]['confidence']
-                    #print(f"vehicle_confidence: {vehicle_confidence}")
+                    # Loop through each found vehicles
+                    for vehicle_idx in vehicles.index:
 
-                    # If detected vehicle has high enough confidence
-                    if vehicle_confidence > VEHICLE_CONFIDENCE_THRESHOLD:
+                        # Get vehicle_confidence
+                        vehicle_confidence = vehicles.loc[vehicle_idx]['confidence']
+                        #print(f"vehicle_confidence: {vehicle_confidence}")
 
-                        # Get vehicle_box
-                        vehicle_box = vehicles.loc[vehicle_idx, ['xmin', 'ymin', 'xmax', 'ymax']]
-                        vehicle_box = tuple(map(int, vehicle_box))
-                        #print(f"vehicle_box: {vehicle_box}")
+                        # If detected vehicle has high enough confidence
+                        if vehicle_confidence > VEHICLE_CONFIDENCE_THRESHOLD:
 
-                        # Skip vehicle if vehicle is outside detection region
-                        if not isWithinBB(vehicle_box, DetectionBoundary, threshold=0.8):
-                            continue
+                            # Get vehicle_box
+                            vehicle_box = vehicles.loc[vehicle_idx, ['xmin', 'ymin', 'xmax', 'ymax']]
+                            vehicle_box = tuple(map(int, vehicle_box))
+                            #print(f"vehicle_box: {vehicle_box}")
 
-                        # Check if new bounding box is within what is already being tracked
-                        matchVehicleID = isNewBox(vehicle_box, vehicleAttributes, key='vehicle_tracker')
+                            # Skip vehicle if vehicle is outside detection region
+                            if not isWithinBB(vehicle_box, DetectionBoundary, threshold=0.8):
+                                continue
 
-                        # If new vehicle is found
-                        if matchVehicleID is None:
+                            # Check if new bounding box is within what is already being tracked
+                            matchVehicleID = isNewBox(vehicle_box, vehicleAttributes, key='vehicle_tracker')
 
-                            if TRACKER_DEBUG: print ('Creating new vehicle tracker ' + str(currentCarID))
+                            # If new vehicle is found
+                            if matchVehicleID is None:
 
-                            # Create new tracker
-                            vehicle_tracker = dlib.correlation_tracker()
-                            vehicle_tracker.start_track(opencv_image, dlib.rectangle(*vehicle_box))
+                                if TRACKER_DEBUG: print ('Creating new vehicle tracker ' + str(currentCarID))
 
-                            # Update attributes
-                            vehicleAttributes[currentCarID] = {
-                                'vehicle_tracker': vehicle_tracker,
-                                'location1': convert_xyxy_to_xywh(*vehicle_box),
-                                'vehicle_confidence': vehicle_confidence
-                            }
-
-                            currentCarID += 1
-                        
-                        # If vehicle detected is already being tracked
-                        else:
-                            # Update attributes
-                            vehicleAttributes[matchVehicleID]['vehicle_confidence'] = vehicle_confidence
-                        
-
-
-            # If plates are found
-            if len(plates):
-
-                # Loop through each plate found
-                for plate_idx in plates.index:
-
-                    # Get plate_confidence
-                    plate_confidence = plates.loc[plate_idx]['confidence']
-                    #print(f"plate_confidence: {plate_confidence}")
-
-                    # If detected plate has high enough confidence
-                    if plate_confidence > PLATE_CONFIDENCE_THRESHOLD:
-
-                        # Get plate_box
-                        plate_box = plates.loc[plate_idx, ['xmin', 'ymin', 'xmax', 'ymax']]
-                        plate_box = tuple(map(int, plate_box))
-                        #print(f"plate_box: {plate_box}")
-
-                        # Skip plate if plate is outside detection region
-                        if not isWithinBB(plate_box, DetectionBoundary, threshold=0.8):
-                            continue
-
-                        # Extract text from plate region
-                        plate_number, ocr_confidence = perform_ocr(opencv_image, plate_box, ocr_method=OCR_METHOD)
-                        #print(plate_number, ocr_confidence)
-
-                        # Expand the size of the plate image
-                        plate_resized_image = resize2SquareKeepingAspectRation(opencv_image[plate_box[1]:plate_box[3], plate_box[0]:plate_box[2]], plateWindowSize, cv2.INTER_AREA)
-
-
-
-                        # Check if new bounding box is within what is already being tracked
-                        matchPlateID = isNewBox(plate_box, plateAttributes, key='plate_tracker')
-
-                        # If a new plate is found
-                        if matchPlateID is None:
-
-                            if TRACKER_DEBUG: print ('Creating new plate tracker ' + str(currentPlateID))
-
-                            # Create new tracker
-                            plate_tracker = dlib.correlation_tracker()
-                            plate_tracker.start_track(opencv_image, dlib.rectangle(*plate_box))
-
-                            # Update attributes
-                            plateAttributes[currentPlateID] = {
-                                'plate_tracker': plate_tracker,
-                                'plate_box': plate_box,
-                                'plate_confidence': plate_confidence,
-                                'plate_number': plate_number,
-                                'ocr_confidence': ocr_confidence
-                            }
-
-                            if plate_number:
-                                
-                                # Write in the plate window
-                                cv2.putText(plate_resized_image, plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
-                                cv2.putText(plate_resized_image, "Confidence: " + str(ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
-
-                            currentPlateID += 1
-
-                        # If plate detected is already being tracked
-                        else:
-                            # Update attributes
-                            plateAttributes[matchPlateID]['plate_confidence'] = plate_confidence
-
-                            old_plate_number = plateAttributes[matchPlateID]['plate_number']
-                            old_ocr_confidence = plateAttributes[matchPlateID]['ocr_confidence']
-
-                            # If confidence for plate number has increased
-                            if plate_number and ((old_ocr_confidence is None) or (ocr_confidence > old_ocr_confidence)):
+                                # Create new tracker
+                                vehicle_tracker = dlib.correlation_tracker()
+                                vehicle_tracker.start_track(opencv_image, dlib.rectangle(*vehicle_box))
 
                                 # Update attributes
-                                plateAttributes[matchPlateID]['plate_number'] = plate_number
-                                plateAttributes[matchPlateID]['ocr_confidence'] = ocr_confidence
+                                vehicleAttributes[currentCarID] = {
+                                    'vehicle_tracker': vehicle_tracker,
+                                    'location1': convert_xyxy_to_xywh(*vehicle_box),
+                                    'vehicle_confidence': vehicle_confidence
+                                }
 
-                                # Write in the plate window
-                                cv2.putText(plate_resized_image, plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
-                                cv2.putText(plate_resized_image, "Confidence: " + str(ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
-
-                            # If confidence for plate number has not increased
-                            elif old_plate_number:
-
-                                # Write in the plate window
-                                cv2.putText(plate_resized_image, old_plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
-                                cv2.putText(plate_resized_image, "Confidence: " + str(old_ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
-
-        # Track all vehicles
-        resultImage, vehicleAttributes = trackAllVehicles(resultImage, vehicleAttributes, colour=vehicleBoxColour)
-
-        # Track all plates
-        resultImage, plateAttributes = trackAllPlates(resultImage, plateAttributes, colour=plateBoxColour)
-
-        # Compute speed for each tracked vehicle
-        resultImage, vehicleAttributes = get_vehicle_speed(resultImage, vehicleAttributes, frameCounter, boundary=speedComputeBoundary)
-
-        # Overlay resized plate window with resulting image
-        if plate_resized_image is not None:
-            resultImage[0:plateWindowSize, 0:plateWindowSize] = plate_resized_image
-
-        # Draw dotted bounding box for where speed is measuring
-        drawrect(resultImage, (speedComputeBoundary[0], speedComputeBoundary[1]), (speedComputeBoundary[2], speedComputeBoundary[3]), speedComputeBoxColour, thickness=3, style='dotted')
-        cv2.putText(resultImage, "Speed Capture Area", (speedComputeBoundary[0], speedComputeBoundary[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, speedComputeBoxColour, 2)
-
-        # Write title on video
-        cv2.putText(resultImage, "Vehicle Detector: " + VEHICLE_DETECT_METHOD, (titlePosition[0], titlePosition[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
-        cv2.putText(resultImage, "  Plate Detector: " + PLATE_DETECT_METHOD, (titlePosition[0], titlePosition[1] + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
-        cv2.putText(resultImage, "   OCR Detector: " + OCR_METHOD, (titlePosition[0], titlePosition[1] + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
+                                currentCarID += 1
+                            
+                            # If vehicle detected is already being tracked
+                            else:
+                                # Update attributes
+                                vehicleAttributes[matchVehicleID]['vehicle_confidence'] = vehicle_confidence
+                            
 
 
+                # If plates are found
+                if len(plates):
 
-        ##################
-        # DATA FILTERING #
-        ##################
+                    # Loop through each plate found
+                    for plate_idx in plates.index:
 
-        # Match the plate to the vehicle
-        frame_plate_vehicle_pair = match_plate_with_vehicle(vehicleAttributes, plateAttributes, threshold=0.1)
+                        # Get plate_confidence
+                        plate_confidence = plates.loc[plate_idx]['confidence']
+                        #print(f"plate_confidence: {plate_confidence}")
 
-        # Add the new unique plate and vehicle pairs to the list
-        new_plate_vehicle_pair = [x for x in frame_plate_vehicle_pair if x not in vehicleWithPlateAttributes]
-        vehicleWithPlateAttributes.extend(new_plate_vehicle_pair)
+                        # If detected plate has high enough confidence
+                        if plate_confidence > PLATE_CONFIDENCE_THRESHOLD:
 
-        # Convert to pandas dataframe
-        frame_plate_vehicle_pair_df = pd.DataFrame.from_records(frame_plate_vehicle_pair)
-        vehicleWithPlate_df = pd.DataFrame.from_records(vehicleWithPlateAttributes)
+                            # Get plate_box
+                            plate_box = plates.loc[plate_idx, ['xmin', 'ymin', 'xmax', 'ymax']]
+                            plate_box = tuple(map(int, plate_box))
+                            #print(f"plate_box: {plate_box}")
 
-        # Filter out unnecessary columns
-        drop_column_list = ['vehicle_tracker', 'plate_tracker', 'location2', 'speed_captured', 'slow_vehicle_counter']
-        frame_plate_vehicle_pair_filtered_df = frame_plate_vehicle_pair_df.drop(columns=drop_column_list, errors='ignore')
-        vehicleWithPlate_filtered_df = vehicleWithPlate_df.drop(columns=drop_column_list, errors='ignore')
+                            # Skip plate if plate is outside detection region
+                            if not isWithinBB(plate_box, DetectionBoundary, threshold=0.8):
+                                continue
 
-        # Filter out unnecessary (nearly duplicate) rows
-        drop_duplicates_column_list = ['vehicle_id', 'plate_id', 'plate_number']
-        # Keep the row with highest ocr_confidence for matching vehicle and plates
-        if 'ocr_confidence' in vehicleWithPlate_filtered_df.columns:
-            vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df.sort_values(by='ocr_confidence', axis=0, ascending=True, ignore_index=True)
-            vehicleWithPlate_filtered_df.drop_duplicates(subset=drop_duplicates_column_list, keep='last', inplace=True)
+                            # Extract text from plate region
+                            plate_number, ocr_confidence = perform_ocr(opencv_image, plate_box, ocr_method=OCR_METHOD)
+                            #print(plate_number, ocr_confidence)
+
+                            # Get the ocr duration
+                            if function_duration:
+                                ocr_duration, function_duration = function_duration, None
+
+                            # Expand the size of the plate image
+                            plate_resized_image = resize2SquareKeepingAspectRation(opencv_image[plate_box[1]:plate_box[3], plate_box[0]:plate_box[2]], plateWindowSize, cv2.INTER_AREA)
 
 
 
-            # Re-order the columns
-            column_order = ['vehicle_id', 'plate_id', 'speed', 'plate_number', 'ocr_confidence', 'vehicle_confidence', 'plate_confidence', 'location1', 'plate_box']
-            vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df[column_order]
+                            # Check if new bounding box is within what is already being tracked
+                            matchPlateID = isNewBox(plate_box, plateAttributes, key='plate_tracker')
 
-        if DEBUG_OUTPUT and (not (frameCounter % 120)) and len(vehicleWithPlate_filtered_df):
-            print("\n\n\n")
-            print("Vehicles and plates data after " + str(frameCounter) + " frames: ")
-            print(vehicleWithPlate_filtered_df)
+                            # If a new plate is found
+                            if matchPlateID is None:
 
-            # Write to csv file. No compression to save faster.
-            if OUTPUT_CSV and len(vehicleWithPlate_filtered_df): 
-                vehicleWithPlate_filtered_df.to_csv(csv_output_path, sep=',', index=False, header=True, encoding='utf-8', compression=None)
+                                if TRACKER_DEBUG: print ('Creating new plate tracker ' + str(currentPlateID))
+
+                                # Create new tracker
+                                plate_tracker = dlib.correlation_tracker()
+                                plate_tracker.start_track(opencv_image, dlib.rectangle(*plate_box))
+
+                                # Update attributes
+                                plateAttributes[currentPlateID] = {
+                                    'plate_tracker': plate_tracker,
+                                    'plate_box': plate_box,
+                                    'plate_confidence': plate_confidence,
+                                    'plate_number': plate_number,
+                                    'ocr_confidence': ocr_confidence
+                                }
+
+                                if plate_number:
+                                    
+                                    # Write in the plate window
+                                    cv2.putText(plate_resized_image, plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
+                                    cv2.putText(plate_resized_image, "Confidence: " + str(ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
+
+                                currentPlateID += 1
+
+                            # If plate detected is already being tracked
+                            else:
+                                # Update attributes
+                                plateAttributes[matchPlateID]['plate_confidence'] = plate_confidence
+
+                                old_plate_number = plateAttributes[matchPlateID]['plate_number']
+                                old_ocr_confidence = plateAttributes[matchPlateID]['ocr_confidence']
+
+                                # If confidence for plate number has increased
+                                if plate_number and ((old_ocr_confidence is None) or (ocr_confidence > old_ocr_confidence)):
+
+                                    # Update attributes
+                                    plateAttributes[matchPlateID]['plate_number'] = plate_number
+                                    plateAttributes[matchPlateID]['ocr_confidence'] = ocr_confidence
+
+                                    # Write in the plate window
+                                    cv2.putText(plate_resized_image, plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
+                                    cv2.putText(plate_resized_image, "Confidence: " + str(ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
+
+                                # If confidence for plate number has not increased
+                                elif old_plate_number:
+
+                                    # Write in the plate window
+                                    cv2.putText(plate_resized_image, old_plate_number, (10, plateWindowSize - 120), cv2.FONT_HERSHEY_SIMPLEX, 2.5, plateBoxColour, 3)
+                                    cv2.putText(plate_resized_image, "Confidence: " + str(old_ocr_confidence) + "%", (10, plateWindowSize - 120 + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, plateBoxColour, 2)
+
+            # Track all vehicles
+            resultImage, vehicleAttributes = trackAllVehicles(resultImage, vehicleAttributes, colour=vehicleBoxColour)
+
+            # Track all plates
+            resultImage, plateAttributes = trackAllPlates(resultImage, plateAttributes, colour=plateBoxColour)
+
+            # Compute speed for each tracked vehicle
+            resultImage, vehicleAttributes = get_vehicle_speed(resultImage, vehicleAttributes, frameCounter, boundary=speedComputeBoundary)
+
+            # Overlay resized plate window with resulting image
+            if plate_resized_image is not None:
+                resultImage[0:plateWindowSize, 0:plateWindowSize] = plate_resized_image
+
+            # Draw dotted bounding box for where speed is measuring
+            drawrect(resultImage, (speedComputeBoundary[0], speedComputeBoundary[1]), (speedComputeBoundary[2], speedComputeBoundary[3]), speedComputeBoxColour, thickness=3, style='dotted')
+            cv2.putText(resultImage, "Speed Capture Area", (speedComputeBoundary[0], speedComputeBoundary[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, speedComputeBoxColour, 2)
+
+            # Write inference methods on video
+            cv2.putText(resultImage, "Vehicle Detector: " + VEHICLE_DETECT_METHOD, (titlePosition[0], titlePosition[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
+            cv2.putText(resultImage, "  Plate Detector: " + PLATE_DETECT_METHOD, (titlePosition[0], titlePosition[1] + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
+            cv2.putText(resultImage, "   OCR Detector: " + OCR_METHOD, (titlePosition[0], titlePosition[1] + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
+
+
+
+            ##################
+            # DATA FILTERING #
+            ##################
+
+            # Match the plate to the vehicle
+            frame_plate_vehicle_pair = match_plate_with_vehicle(vehicleAttributes, plateAttributes, threshold=0.1)
+
+            # Add the new unique plate and vehicle pairs to the list
+            new_plate_vehicle_pair = [x for x in frame_plate_vehicle_pair if x not in vehicleWithPlateAttributes]
+            vehicleWithPlateAttributes.extend(new_plate_vehicle_pair)
+
+            # Convert to pandas dataframe
+            frame_plate_vehicle_pair_df = pd.DataFrame.from_records(frame_plate_vehicle_pair)
+            vehicleWithPlate_df = pd.DataFrame.from_records(vehicleWithPlateAttributes)
+
+            # Filter out unnecessary columns
+            drop_column_list = ['vehicle_tracker', 'plate_tracker', 'location2', 'speed_captured', 'slow_vehicle_counter']
+            frame_plate_vehicle_pair_filtered_df = frame_plate_vehicle_pair_df.drop(columns=drop_column_list, errors='ignore')
+            vehicleWithPlate_filtered_df = vehicleWithPlate_df.drop(columns=drop_column_list, errors='ignore')
+
+            # Filter out unnecessary (nearly duplicate) rows
+            drop_duplicates_column_list = ['vehicle_id', 'plate_id', 'plate_number']
+            # Keep the row with highest ocr_confidence for matching vehicle and plates
+            if 'ocr_confidence' in vehicleWithPlate_filtered_df.columns:
+                vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df.sort_values(by='ocr_confidence', axis=0, ascending=True, ignore_index=True)
+                vehicleWithPlate_filtered_df.drop_duplicates(subset=drop_duplicates_column_list, keep='last', inplace=True)
+
+
+
+                # Re-order the columns
+                column_order = ['vehicle_id', 'plate_id', 'speed', 'plate_number', 'ocr_confidence', 'vehicle_confidence', 'plate_confidence', 'location1', 'plate_box']
+                vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df[column_order]
+
+            if DEBUG_OUTPUT and (not (frameCounter % 120)) and len(vehicleWithPlate_filtered_df):
+                print("\n\n\n")
+                print("Vehicles and plates data after " + str(frameCounter) + " frames: ")
+                print(vehicleWithPlate_filtered_df)
+
+                # Write to csv file. No compression to save faster.
+                if OUTPUT_CSV and len(vehicleWithPlate_filtered_df): 
+                    vehicleWithPlate_filtered_df.to_csv(csv_output_path, sep=',', index=False, header=True, encoding='utf-8', compression=None)
+
+            # Write the frame into output video file
+            if OUTPUT_VIDEO:
+                out.write(resultImage)
+
+        # Write inference_duration, ocr_duration, and process_duration
+        if inference_duration:
+            cv2.putText(resultImage, "Inference time: " + str(inference_duration) + " ms", (titlePosition[0], titlePosition[1] + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
+        if ocr_duration:
+            cv2.putText(resultImage, "      OCR time: " + str(ocr_duration) + " ms", (titlePosition[0], titlePosition[1] + 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
+        if frame.time:
+            cv2.putText(resultImage, "    Frame time: " + str(frame.time) + " ms", (titlePosition[0], titlePosition[1] + 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
 
         # Show image
         cv2.imshow('ANPR',resultImage)
-
-        # Write the frame into output video file
-        if OUTPUT_VIDEO:
-            out.write(resultImage)
 
         if cv2.waitKey(33) == 27:
             break
