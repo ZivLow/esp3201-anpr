@@ -764,7 +764,7 @@ def perform_inference(vehicle_detect_method='YOLOv5', plate_detect_method='YOLOv
         
     # Pattern matching with PEP 636: https://peps.python.org/pep-0636/#or-patterns
     match inference_method:
-        case ['haar_cascade', 'YOLOV5']:
+        case ['haar_cascade', 'YOLOv5']:
             return haar_cascade_vehicles_df, yolo_plates_df
 
         case ['haar_cascade', 'ALPR_SDK']:
