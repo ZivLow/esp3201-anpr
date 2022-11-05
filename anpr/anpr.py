@@ -1305,9 +1305,7 @@ if __name__ == "__main__":
             if 'ocr_confidence' in vehicleWithPlate_filtered_df.columns:
                 vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df.sort_values(by='ocr_confidence', axis=0, ascending=True, ignore_index=True)
                 vehicleWithPlate_filtered_df.drop_duplicates(subset=drop_duplicates_column_list, keep='last', inplace=True)
-
-
-
+                
                 # Re-order the columns
                 column_order = ['vehicle_id', 'plate_id', 'speed', 'plate_number', 'ocr_confidence', 'vehicle_confidence', 'plate_confidence', 'location1', 'plate_box']
                 vehicleWithPlate_filtered_df = vehicleWithPlate_filtered_df[column_order]
@@ -1321,17 +1319,19 @@ if __name__ == "__main__":
                 if OUTPUT_CSV and len(vehicleWithPlate_filtered_df): 
                     vehicleWithPlate_filtered_df.to_csv(csv_output_path, sep=',', index=False, header=True, encoding='utf-8', compression=None)
 
-            # Write the frame into output video file
-            if OUTPUT_VIDEO:
-                out.write(resultImage)
-
         # Write inference_duration, ocr_duration, and process_duration
         if inference_duration:
-            cv2.putText(resultImage, "Inference time: " + str(inference_duration) + " ms", (titlePosition[0], titlePosition[1] + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
+            cv2.putText(resultImage, " Inference time: " + str(inference_duration) + " ms", (titlePosition[0], titlePosition[1] + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
         if ocr_duration:
             cv2.putText(resultImage, "      OCR time: " + str(ocr_duration) + " ms", (titlePosition[0], titlePosition[1] + 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
         if frame.time:
             cv2.putText(resultImage, "    Frame time: " + str(frame.time) + " ms", (titlePosition[0], titlePosition[1] + 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, speedComputeBoxColour, 2)
+
+        # Write the frame into output video file
+        if OUTPUT_VIDEO:
+            out.write(resultImage)
+
+
 
         # Show image
         cv2.imshow('ANPR',resultImage)

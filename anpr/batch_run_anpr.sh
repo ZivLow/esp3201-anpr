@@ -1,17 +1,20 @@
 #!/bin/bash
 
-VEHICLE_DETECT_METHODS=('haar_cascade' 'YOLOv5' 'ALPR_SDK')
-PLATE_DETECT_METHODS=('YOLOv5' 'ALPR_SDK')
 
-#VIDEO_FILE_NAMES=('traffic_both_1' 'traffic_both_2' 'traffic_departing_1' 'traffic_departing_2' 'traffic_departing_3' 'traffic_departing_4' 'traffic_oncoming_1' 'traffic_oncoming_2')
+
+
+VIDEO_FILE_NAMES=('traffic_both_1' 'traffic_both_2' 'traffic_departing_1' 'traffic_departing_2' 'traffic_departing_3' 'traffic_departing_4' 'traffic_oncoming_1' 'traffic_oncoming_2')
+
+#VIDEO_FILE_NAMES=('traffic_both_1' 'traffic_both_2' 'traffic_departing_1' 'traffic_departing_2')
+
+
 
 
 # Batch run in subshells
-for VEHICLE_DETECT_METHOD in "${VEHICLE_DETECT_METHODS[@]}"; do
-    for PLATE_DETECT_METHOD in "${PLATE_DETECT_METHODS[@]}"; do
-    	gnome-terminal --title=${VEHICLE_DETECT_METHOD}_${PLATE_DETECT_METHOD}_${OCR_DETECT_METHOD} --geometry 0x0+0+850 --hide-menubar -- bash -c "./subshell_batch_run_anpr.sh ${VEHICLE_DETECT_METHOD} ${PLATE_DETECT_METHOD}"
-            
-    done
+for VIDEO_FILE_NAME in "${VIDEO_FILE_NAMES[@]}"; do
+
+    gnome-terminal --title=${VIDEO_FILE_NAME} --geometry 0x0+0+850 --hide-menubar -- bash -c "./subshell_batch_run_anpr.sh ${VIDEO_FILE_NAME}"
+    
 done
 
 echo "END OF $(basename "$0") SCRIPT"
