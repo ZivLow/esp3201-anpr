@@ -526,7 +526,7 @@ def estimateSpeed(location1, location2, frame_rate):
     d_meters = d_pixels / PPM
     #print("d_pixels=" + str(d_pixels), "d_meters=" + str(d_meters))
     #speed = d_meters * frame_rate * 3.6 / TRACKER_FRAME_CHECK_INTERVAL
-    speed = d_meters * frame_rate / TRACKER_FRAME_CHECK_INTERVAL
+    speed = d_meters * frame_rate * 3.6 / TRACKER_FRAME_CHECK_INTERVAL
     return round(speed, 1)
 
 # Calculates Intersection over Union (IoU) of bb1 and bb2
