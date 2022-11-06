@@ -2,9 +2,9 @@ cd ./anpr
 
 LD_LIBRARY_PATH=../alpr_sdk:$LD_LIBRARY_PATH \
 python3 anpr.py \
---vehicle_detect_method 'YOLOv5' \
---plate_detect_method 'YOLOv5' \
---ocr_detect_method 'EasyOCR' \
+--vehicle_detect_method 'ALPR_SDK' \
+--plate_detect_method 'ALPR_SDK' \
+--ocr_detect_method 'PyTesseract' \
 --video_filename 'traffic_departing_1' \
 --video_file_extension '.mov' \
 --video_file_directory '/home/ziv/speeding_catcher/traffic_footage/' \
@@ -16,6 +16,7 @@ python3 anpr.py \
 --inference_frame_check_interval 1 \
 --tracker_frame_check_interval 1 \
 --speed_limit 2 \
+--ppm 25.0 \
 --vehicle_track_threshold 8 \
 --plate_track_threshold 6 \
 --vehicle_confidence_threshold 20.0 \

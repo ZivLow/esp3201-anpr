@@ -16,20 +16,24 @@
 
 import math
 import os
-from pathlib import Path
 import cv2
 import dlib
 import easyocr
-import numpy as np
-import pandas as pd
 import pytesseract
 import torch
 import argparse
 import json
 import traceback
+import numpy as np
+import pandas as pd
+from pathlib import Path
 from PIL import ExifTags, Image, ImageOps
 from time import process_time as get_time
 
+# Install ALPR-SDK properly to import 'ultimateAlprSdk' 
+# to be able to use ALPR_SDK as a vehicle, plate, or OCR detection method
+# They provided a sample python file to allow you to check if install was successful or not.
+# See https://github.com/DoubangoTelecom/ultimateALPR-SDK
 try:
     import ultimateAlprSdk
 except ModuleNotFoundError as err:
@@ -194,27 +198,6 @@ def init_alpr_sdk():
         "recogn_minscore": 0.3,
         "recogn_score_type": "min"
     }
-
-    # parser = argparse.ArgumentParser(description="""
-    # This is the alpr-sdk using python language
-    # """)
-
-    # parser.add_argument("--image", required=False, default=video_file_path, help="Path to the image with ALPR data to recognize")
-    # parser.add_argument("--assets", required=False, default=alpr_sdk_asset_path, help="Path to the assets folder")
-    # parser.add_argument("--charset", required=False, default="latin", help="Defines the recognition charset (a.k.a alphabet) value (latin, korean, chinese...)")
-    # parser.add_argument("--car_noplate_detect_enabled", required=False, default=True, help="Whether to detect and return cars with no plate")
-    # parser.add_argument("--ienv_enabled", required=False, default=False, help="Whether to enable Image Enhancement for Night-Vision (IENV). More info about IENV at https://www.doubango.org/SDKs/anpr/docs/Features.html#image-enhancement-for-night-vision-ienv. Default: true for x86-64 and false for ARM.")
-    # parser.add_argument("--openvino_enabled", required=False, default=True, help="Whether to enable OpenVINO. Tensorflow will be used when OpenVINO is disabled")
-    # parser.add_argument("--openvino_device", required=False, default="CPU", help="Defines the OpenVINO device to use (CPU, GPU, FPGA...). More info at https://www.doubango.org/SDKs/anpr/docs/Configuration_options.html#openvino-device")
-    # parser.add_argument("--npu_enabled", required=False, default=True, help="Whether to enable NPU (Neural Processing Unit) acceleration")
-    # parser.add_argument("--klass_lpci_enabled", required=False, default=False, help="Whether to enable License Plate Country Identification (LPCI). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#license-plate-country-identification-lpci")
-    # parser.add_argument("--klass_vcr_enabled", required=False, default=False, help="Whether to enable Vehicle Color Recognition (VCR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-color-recognition-vcr")
-    # parser.add_argument("--klass_vmmr_enabled", required=False, default=False, help="Whether to enable Vehicle Make Model Recognition (VMMR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-make-model-recognition-vmmr")
-    # parser.add_argument("--klass_vbsr_enabled", required=False, default=False, help="Whether to enable Vehicle Body Style Recognition (VBSR). More info at https://www.doubango.org/SDKs/anpr/docs/Features.html#vehicle-body-style-recognition-vbsr")
-    # parser.add_argument("--tokenfile", required=False, default="", help="Path to license token file")
-    # parser.add_argument("--tokendata", required=False, default="", help="Base64 license token data")
-
-    # args = parser.parse_args()
 
     # Update JSON options using values from the command args
     JSON_CONFIG["assets_folder"] = alpr_sdk_asset_path
@@ -932,7 +915,7 @@ def get_input_args():
     anpr_parser.add_argument("--video_fps", required=False, default="30", help="video frame rate")
 
     # Ouput video options
-    anpr_parser.add_argument("--output_video", required=False, default=True, help="[True, False]. Whether to output video")
+    anpr_parser.add_argument("--output_video", required=False, default="True", help="[True, False]. Whether to output video")
     anpr_parser.add_argument("--output_video_directory", required=False, default='/home/ziv/speeding_catcher/output_video/', help="Directory of output video")
     anpr_parser.add_argument("--output_video_append", required=False, default='_output', help="String to append to output video filename")
 
@@ -985,7 +968,7 @@ if __name__ == "__main__":
     input_video_fps = int(anpr_args.video_fps)
 
     # Output mp4 video file name
-    OUTPUT_VIDEO = True                                        # [True, False]. Whether to output video.
+    OUTPUT_VIDEO = (anpr_args.output_video == "True")                                        # [True, False]. Whether to output video.
     output_video_folder_name = "_".join(PROCESSING_METHODS)
     output_video_directory = anpr_args.output_video_directory + output_video_folder_name + '/'    # Directory to save the video file. Requires full path.
     output_video_append = anpr_args.output_video_append    # String to append to output video filename
@@ -1073,17 +1056,15 @@ if __name__ == "__main__":
     # Load video
     video = cv2.VideoCapture(video_file_path)
 
-    if OUTPUT_VIDEO or OUTPUT_CSV:
+    if OUTPUT_VIDEO:
         # Create recursive nested directory for output video file
         Path(output_video_directory).mkdir(parents=True, exist_ok=True)
 
         out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'mp4v'), output_video_fps, output_video_resolution)
 
-    # anpr_blank_image = np.zeros((1080, 1920, 1), dtype = "uint8")
-    # cv2.imshow('ANPR', anpr_blank_image)
-    
-    # plate_blank_image = np.zeros((plateWindowSize, plateWindowSize, 1), dtype = "uint8")
-    # cv2.imshow('Plate', plate_blank_image)
+    if OUTPUT_CSV:
+        # Create recursive nested directory for output csv file
+        Path(output_video_directory).mkdir(parents=True, exist_ok=True)
 
     plate_resized_image = None
 

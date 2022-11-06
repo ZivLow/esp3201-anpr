@@ -16,7 +16,7 @@ python3 anpr.py \
 --inference_frame_check_interval 1 \
 --tracker_frame_check_interval 1 \
 --speed_limit 2 \
---ppm 34.0 \
+--ppm 25.0 \
 --vehicle_track_threshold 8 \
 --plate_track_threshold 6 \
 --vehicle_confidence_threshold 20.0 \
