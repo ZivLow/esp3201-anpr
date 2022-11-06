@@ -1,4 +1,4 @@
-# https://github.com/ZivLow/esp3201-anpr
+# Github Repository: https://github.com/ZivLow/esp3201-anpr
 # Script for performing automatic number plate recognition 
 # and identifying number plates of speeding vehicles
 # ESP3201 (Machine Learning in Robotics and Engineering) Project
@@ -6,11 +6,17 @@
 # 2) Ziv Low
 # 
 # Tested and run on Ubuntu 22.04 LTS
+# 
+# USAGE: Install all needed dependencies. 
+#        Recommended to use the provided shell scripts 'run_anpr.sh' or 'custom_run_anpr.sh' in 'esp3201-anpr' directory
+#        Run in bash terminal: './run_anpr.sh' or './custom_run_anpr.sh' in 'esp3201-anpr' directory
+#        You may need to enable execute permissions for these shell scripts by running 'chmod 775 run_anpr.sh' or 'chmod 775 custom_run_anpr.sh'
+# 
+#        Alternatively, you can also run 'python anpr.py' inside 'anpr' directory.
 
 import math
 import os
 from pathlib import Path
-
 import cv2
 import dlib
 import easyocr
@@ -20,6 +26,8 @@ import pytesseract
 import torch
 import argparse
 import json
+import traceback
+from PIL import ExifTags, Image, ImageOps
 from time import process_time as get_time
 
 try:
@@ -101,9 +109,6 @@ def drawrect(img,pt1,pt2,color,thickness=1.0,style='dotted'):
 
 # Load image from opencv video frame
 def load_pil_image_from_opencv_frame(opencv_image):
-    import traceback
-
-    from PIL import ExifTags, Image, ImageOps
 
     # convert from openCV2 to PIL.
     color_converted = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2RGB)
